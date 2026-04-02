@@ -1,673 +1,284 @@
-# 🚀 Social Media Analytics & Engagement Intelligence
+# Social Media Analytics & Engagement Intelligence
 
-A data-driven system that analyzes YouTube channel performance and generates actionable insights to improve engagement and content strategy.
+A Streamlit dashboard for collecting public YouTube channel data, storing it in a database, computing engagement and sentiment metrics, and exploring the results through interactive charts and exports.
 
----
+## Overview
 
-## 🎯 Project Objective
+This project helps creators, analysts, and hackathon teams answer questions like:
 
-To build a **YouTube Analytics Intelligence System** that:
+- Which videos are driving the best engagement?
+- When does a channel tend to perform best?
+- What is the overall sentiment in audience comments?
+- Which channels or videos should be studied more closely?
 
-* Extracts public data using YouTube API
-* Stores it in a database (PostgreSQL / SQLite)
-* Performs analytics on engagement
-* Generates meaningful insights for creators & brands
+The app fetches public data from the YouTube Data API, stores it locally, computes analytics, and surfaces the results in a three-tab dashboard:
 
----
+- `Fetch Data`
+- `Visualize`
+- `Export Data`
 
-## ⚠️ Hackathon Constraint
+## What The App Does
 
-> Only **public YouTube data** is used
-> (No watch time, retention graph, demographics)
+- Search a YouTube channel by name
+- Fetch channel metadata
+- Fetch recent videos and playlists
+- Fetch top-level comments for fetched videos
+- Store collected data in database tables
+- Calculate per-video engagement metrics
+- Run VADER-based sentiment analysis on comments
+- Generate channel-level summary metrics
+- Visualize results with Plotly charts
+- Export tables or the full dataset to Excel
 
----
+## Current Project Structure
 
-## 🧠 Core Features
-
-### 📊 Analytics
-
-* **Engagement Rate** - Measures interaction relative to views
-* **Engagement Score** - Composite metric combining likes, comments, views
-* **Top Performing Videos** - Auto-identified viral/trending content
-* **Growth Trends** - Tracks channel subscriber and view growth
-* **Content Performance** - Video categorization by engagement level
-* **Progress Tracking** - Real-time progress bar with estimated time for data fetching
-* **Detailed Logging** - Step-by-step process logs with timestamps
-
-### ⏰ Time Intelligence
-
-* Best Posting Time (Day + Hour analysis)
-* Content frequency patterns
-* Upload schedule optimization
-
-### 💬 Comment Intelligence (🔥 Powerful)
-
-* **Sentiment Analysis** (VADER - Valence Aware Dictionary and sEntiment Reasoner)
-  - Positive/Negative/Neutral classification
-  - Sentiment average per video
-* **Top Keywords Extraction** - Most discussed topics in comments
-* **Audience Feedback Insights** - Auto-categorized feedback patterns
-* **Comment Engagement** - Like counts + reply patterns
-
-### 📈 Creator Summary & Analytics Tables
-
-* **Video Analytics**: Per-video metrics (engagement, sentiment, category)
-* **Channel Analytics**: Aggregated channel-level insights
-  - Average views per video
-  - Average engagement rate
-  - Growth rate calculation
-  - Audience quality scoring
-* **Average Views & Engagement** - Channel-wide metrics
-* **Posting Frequency** - Content upload patterns
-
----
-
-## 🚀 Bonus Features (Advanced)
-
-* Audience Quality Score (proxy-based)
-* Sponsorship Value Estimation
-* Video Performance Clustering
-* **Real-Time Progress Tracking** with estimated time remaining
-* **Timestamps & Detailed Logging** for each fetch step
-* **Multi-Tab Raw Data Explorer** - Access all 6 database tables
-* **Multi-Channel Analytics** - Compare channels side-by-side
-* **Dynamic Column Detection** - Flexible schema support for various database formats
-* **Excel Export** - Download individual tables or complete datasets
-
----
-
-## 📈 Dashboard Features (Streamlit UI)
-
-### Tab 1: "📥 Fetch Data"
-Real-time YouTube data fetching with enhanced UX:
-* **Channel Search** - Enter channel name to search on YouTube
-* **Customizable Limits** - Set video and playlist fetch limits
-* **Progress Bar** - Visual progress indicator with percentage
-* **Live Logging** - Timestamped logs showing each step
-  - Channel found status
-  - Videos fetched count
-  - Comments per video progress (X/Total)
-  - Elapsed time and estimated total time
-  - Analytics computation status
-* **Instant Summary** - KPI metrics after fetch completes
-  - Total videos, comments, average views, engagement rate
-  - Audience quality score
-* **Quick Preview** - Top videos, best posting times, sentiment distribution
-
-### Tab 2: "📊 Visualize"
-Interactive multi-channel analytics dashboard:
-* **Channel Selection** - Multiselect channel filter in sidebar
-* **KPI Metrics** - Quick overview cards (total videos, avg views, avg engagement)
-* **Visualizations Per Channel**:
-  - 🔥 Top Videos bar chart
-  - ⏰ Best Posting Time heatmap
-  - 💬 Sentiment distribution pie chart
-  - 🔍 Top keywords bar chart
-* **Download Options** - Export individual tables as Excel
-* **Raw Data Explorer** - 6 tabs for complete data inspection:
-  - 📺 Channels table
-  - 🎥 Videos table
-  - 💬 Comments table
-  - 📋 Playlists table  
-  - 📈 Video Analytics table
-  - 🎯 Channel Analytics table
-
----
-
-## 🏗️ System Architecture
-
-```
-YouTube API
-      ↓
-Python Backend (Data Fetching)
-      ↓
-Database Layer (PostgreSQL / SQLite)
-      ↓
-Data Processing (Pandas)
-      ↓
-Analytics Engine
-      ↓
-Insight Engine
-      ↓
-Dashboard (Streamlit)
+```text
+.
+|-- .env
+|-- .gitignore
+|-- README.md
+|-- requirements.txt
+`-- visualization.py
 ```
 
----
+## Tech Stack
 
-## 🗄️ Database Design
+- Python
+- Streamlit
+- Plotly
+- Pandas
+- Requests
+- NLTK VADER
+- SQLAlchemy
+- PostgreSQL
+- SQLite
+- OpenPyXL
 
-### 📊 Complete Schema Overview
+## Dashboard Workflow
 
-The system uses 6 interconnected tables to store and analyze YouTube data:
+### 1. Fetch Data
 
-#### 📺 **channels**
-Stores YouTube channel metadata
+From the `Fetch Data` tab, the app lets you:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| channel_id | VARCHAR(255) PK | Unique YouTube channel identifier |
-| title | TEXT | Channel name |
-| subscribers | BIGINT | Total subscriber count |
-| total_views | BIGINT | Total lifetime views |
-| video_count | INT | Total number of videos published |
-| created_at | TIMESTAMP | Record creation timestamp |
+- enter a channel name
+- choose the number of videos to fetch
+- choose the number of playlists to fetch
+- watch a live progress log while data is collected
 
-#### 🎥 **videos**
-Stores video-level data linked to channels
+During the fetch flow, the app:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| video_id | VARCHAR(255) PK | Unique YouTube video identifier |
-| channel_id | VARCHAR(255) FK | References channels table |
-| title | TEXT | Video title |
-| views | BIGINT | Video view count |
-| likes | BIGINT | Video like count |
-| comments | BIGINT | Video comment count |
-| published_at | TIMESTAMP | Video publication timestamp |
-| created_at | TIMESTAMP | Record creation timestamp |
+1. searches for the channel
+2. pulls channel statistics
+3. fetches videos
+4. fetches playlists
+5. fetches comments for each video
+6. saves all records to the database
+7. computes video and channel analytics
 
-#### 📋 **playlists**
-Stores playlist information from channels
+### 2. Visualize
 
-| Field | Type | Description |
-|-------|------|-------------|
-| playlist_id | VARCHAR(255) PK | Unique YouTube playlist identifier |
-| channel_id | VARCHAR(255) FK | References channels table |
-| title | TEXT | Playlist title |
-| description | TEXT | Playlist description |
-| item_count | INT | Number of videos in playlist |
-| published_at | TIMESTAMP | Playlist creation timestamp |
-| created_at | TIMESTAMP | Record creation timestamp |
+The `Visualize` tab loads saved data and provides:
 
-#### 💬 **comments**
-Stores individual video comments for sentiment analysis
+- channel selection from the sidebar
+- KPI cards for videos, views, and engagement
+- top-performing video charts
+- best posting time heatmaps
+- sentiment distribution charts
+- top keyword charts from comments
+- raw data tables for every stored entity
 
-| Field | Type | Description |
-|-------|------|-------------|
-| comment_id | VARCHAR(255) PK | Unique YouTube comment identifier |
-| video_id | VARCHAR(255) FK | References videos table |
-| text | TEXT | Comment text content |
-| like_count | INT | Likes on the comment |
-| created_at | TIMESTAMP | Comment creation timestamp |
+### 3. Export Data
 
-#### 📈 **video_analytics**
-Computed analytics for individual videos
+The `Export Data` tab allows:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| id | SERIAL PK | Auto-incrementing primary key |
-| video_id | VARCHAR(255) FK | References videos table |
-| engagement_rate | FLOAT | (likes + comments) / views * 100 |
-| engagement_score | INT | Composite engagement metric |
-| is_top_video | BOOLEAN | Flag for top-performing videos |
-| best_posting_time | VARCHAR(50) | Optimal posting time format (e.g., "Tuesday 7:00 PM") |
-| sentiment_avg | FLOAT | Average sentiment score from comments (VADER) |
-| performance_category | VARCHAR(50) | Category (e.g., "viral", "trending", "standard") |
-| created_at | TIMESTAMP | Record creation timestamp |
+- downloading all tables in one Excel workbook
+- downloading individual tables as Excel files
+- previewing the current dataset before export
 
-#### 🎯 **channel_analytics**
-Aggregated analytics for channels
+## Analytics Included
 
-| Field | Type | Description |
-|-------|------|-------------|
-| id | SERIAL PK | Auto-incrementing primary key |
-| channel_id | VARCHAR(255) FK | References channels table |
-| avg_views | BIGINT | Average views per video |
-| avg_engagement | FLOAT | Average engagement rate |
-| growth_rate | FLOAT | Subscriber/view growth percentage |
-| best_posting_time | VARCHAR(50) | Best posting time for channel content |
-| audience_quality_score | FLOAT | Proxy-based audience quality metric (0-100) |
-| created_at | TIMESTAMP | Record creation timestamp |
+### Video-Level Metrics
 
-### 🔗 **Database Relationships**
+- `engagement_rate = (likes + comments) / views`
+- `engagement_score = int(engagement_rate * 100)`
+- `is_top_video` flag for the highest-engagement videos
+- `best_posting_time` derived from publish day and hour
+- `performance_category` based on engagement rate thresholds:
+  - `Excellent` if `engagement_rate > 0.10`
+  - `Good` if `engagement_rate > 0.05`
+  - `Average` if `engagement_rate > 0.01`
+  - `Poor` otherwise
 
-```
-channels (1) ──── (N) videos
-       │               │
-       │               └──── (N) video_analytics
-       │
-       └──── (N) playlists
-       
-videos (1) ──── (N) comments
-```
+### Comment Intelligence
 
-## 📊 Available Queries & Insights
+- VADER sentiment scoring
+- Positive / Negative / Neutral classification
+- top repeated keywords from comment text
 
-### 📈 Video-Level Analytics Queries
+### Channel-Level Metrics
 
-```sql
--- Get all videos with engagement metrics
-SELECT v.title, v.views, v.likes, v.comments,
-       va.engagement_rate, va.sentiment_avg, va.performance_category
-FROM videos v
-LEFT JOIN video_analytics va ON v.video_id = va.video_id
-ORDER BY va.engagement_rate DESC;
+- average views
+- average engagement
+- simple growth-rate estimate based on fetched videos
+- best posting time summary
+- audience quality score based on positive comment share
 
--- Find top-performing videos
-SELECT * FROM video_analytics 
-WHERE is_top_video = TRUE 
-ORDER BY engagement_score DESC;
+## Database Schema
 
--- Identify best posting times
-SELECT best_posting_time, COUNT(*) as frequency
-FROM video_analytics
-GROUP BY best_posting_time
-ORDER BY frequency DESC;
+The app works with six main tables:
+
+| Table | Purpose |
+|---|---|
+| `channels` | Channel metadata and subscriber/view counts |
+| `videos` | Video-level statistics and publish dates |
+| `playlists` | Playlist data for the selected channel |
+| `comments` | Top-level comment text and likes |
+| `video_analytics` | Computed metrics for individual videos |
+| `channel_analytics` | Aggregated metrics for the channel |
+
+### Relationship Summary
+
+```text
+channels (1) ---- (N) videos
+channels (1) ---- (N) playlists
+videos   (1) ---- (N) comments
+videos   (1) ---- (N) video_analytics
+channels (1) ---- (N) channel_analytics
 ```
 
-### 🎯 Channel-Level Analytics Queries
+## Setup
 
-```sql
--- Get channel summary with all metrics
-SELECT c.title, c.subscribers, c.total_views,
-       ca.avg_views, ca.avg_engagement, ca.growth_rate,
-       ca.audience_quality_score
-FROM channels c
-LEFT JOIN channel_analytics ca ON c.channel_id = ca.channel_id;
+### 1. Create and activate a virtual environment
 
--- Compare channels by engagement
-SELECT c.title, ca.avg_engagement, ca.audience_quality_score
-FROM channels c
-JOIN channel_analytics ca ON c.channel_id = ca.channel_id
-ORDER BY ca.avg_engagement DESC;
+```bash
+python -m venv .venv
 ```
 
-### 💬 Comment & Sentiment Analysis
+Windows PowerShell:
 
-```sql
--- Sentiment insights from comments
-SELECT v.title, va.sentiment_avg, 
-       COUNT(c.comment_id) as total_comments
-FROM videos v
-LEFT JOIN comments c ON v.video_id = c.video_id
-LEFT JOIN video_analytics va ON v.video_id = va.video_id
-GROUP BY v.video_id, v.title, va.sentiment_avg
-ORDER BY va.sentiment_avg DESC;
+```bash
+.venv\Scripts\Activate.ps1
 ```
 
-### 🔀 Complete Data Join (All Information)
+### 2. Install dependencies
 
-```sql
--- Get comprehensive data: Channels → Videos → Comments → Analytics
-SELECT 
-    c.title as channel_name,
-    c.subscribers,
-    c.total_views as channel_total_views,
-    ca.avg_views,
-    ca.avg_engagement,
-    ca.growth_rate,
-    ca.audience_quality_score,
-    v.title as video_title,
-    v.views as video_views,
-    v.likes,
-    v.comments as comment_count,
-    v.published_at,
-    va.engagement_rate,
-    va.engagement_score,
-    va.sentiment_avg,
-    va.performance_category,
-    va.best_posting_time,
-    COUNT(cm.comment_id) as total_comments_fetched
-FROM channels c
-LEFT JOIN channel_analytics ca ON c.channel_id = ca.channel_id
-LEFT JOIN videos v ON c.channel_id = v.channel_id
-LEFT JOIN video_analytics va ON v.video_id = va.video_id
-LEFT JOIN comments cm ON v.video_id = cm.video_id
-GROUP BY 
-    c.channel_id, c.title, c.subscribers, c.total_views,
-    ca.avg_views, ca.avg_engagement, ca.growth_rate, ca.audience_quality_score,
-    v.video_id, v.title, v.views, v.likes, v.comments, v.published_at,
-    va.engagement_rate, va.engagement_score, va.sentiment_avg, 
-    va.performance_category, va.best_posting_time
-ORDER BY c.title, v.published_at DESC;
+```bash
+pip install -r requirements.txt
 ```
 
----
+### 3. Download the VADER lexicon
 
-## 🧪 Analytics Engine Metrics
+This project uses `SentimentIntensityAnalyzer`, so the VADER data package must be available locally:
 
-### Engagement Rate Calculation
-```
-Engagement Rate = ((Likes + Comments) / Views) * 100
-```
-
-### Engagement Score (Composite)
-```
-Engagement Score = (Likes * 2) + Comments + (Views * 0.01)
+```bash
+python -m nltk.downloader vader_lexicon
 ```
 
-### Audience Quality Score
-```
-Quality Score = (Engagement Rate * 0.4) + 
-                (Sentiment Positivity * 0.3) + 
-                (Comment Depth * 0.3)
-```
+### 4. Configure environment variables
 
-### Performance Categories
-- 🔥 **Viral**: Engagement Rate > 5%
-- 📈 **Trending**: Engagement Rate 2-5%
-- 📊 **Standard**: Engagement Rate < 2%
+Create a `.env` file in the project root:
 
----
+```env
+YOUTUBE_API_KEY=your_youtube_api_key
 
-## ⚙️ Tech Stack
+# Database mode
+DB_TYPE=postgresql
 
-* **Python** 🐍 (3.8+)
-* **YouTube Data API v3** - Data extraction
-* **PostgreSQL** 🐘 - Production database
-* **SQLite** ⚡ - Development/hackathon database
-* **Pandas** 📊 - Data manipulation & analysis
-* **Streamlit** 📈 - Dashboard framework
-* **NLTK** - NLP processing (VADER sentiment)
-* **psycopg2** - PostgreSQL driver
-* **python-dotenv** - Environment config
-
----
-
-## 📦 Dependencies (requirements.txt)
-
-```
-requests>=2.28.0
-psycopg2-binary>=2.9
-python-dotenv>=0.21
-pandas>=1.5
-nltk>=3.8
-streamlit>=1.0
-openpyxl>=3.8
-```
-
----
-
-## 🔄 Data Pipeline Flow
-
-```
-Input Channel Name
-        ↓
-Fetch Channel ID (YouTube API)
-        ↓
-Fetch Channel Data → Store in [channels] table
-        ↓                    
-Fetch Videos → Store in [videos] table
-        ↓
-Fetch Comments → Store in [comments] table
-        ↓
-Fetch Playlists → Store in [playlists] table
-        ↓
-[ANALYTICS ENGINE]
-        ├─→ Sentiment Analysis (VADER) on comments
-        ├─→ Calculate engagement rates
-        ├─→ Identify top videos
-        ├─→ Determine best posting times
-        └─→ Store in [video_analytics] & [channel_analytics]
-        ↓
-Generate Backups
-        ├─→ Save JSON Backup (backup.json)
-        ├─→ Save CSV Backup (backup.csv)
-        └─→ Create Excel export
-        ↓
-Ready for Dashboard/Insights
-```
-
----
-
-## 🧩 Database Flexibility (🔥 Important Upgrade)
-
-### ✅ PostgreSQL Mode (Production)
-
-Requires:
-
-* PostgreSQL installed
-* .env configuration
-
----
-
-### ✅ SQLite Mode (Hackathon Friendly)
-
-* No installation required
-* Auto creates `.db` file
-* Plug & Play
-
----
-
-## 🔐 Environment Variables (.env)
-
-```
-YOUTUBE_API_KEY=your_api_key
-
-# Choose DB Type
-DB_TYPE=postgres   # or sqlite
-
-# PostgreSQL Config
+# PostgreSQL settings
 DB_NAME=social_analytics
 DB_USER=postgres
 DB_PASSWORD=your_password
 DB_HOST=localhost
 DB_PORT=5432
 
-# SQLite Config (optional)
+# SQLite settings
 SQLITE_DB_NAME=social_analytics.db
 ```
 
----
+## Running The App
 
----
-
-## ⚡ Progress Tracking & Logging Features
-
-### Real-Time Progress Updates
-* **Progress Bar** - Visual indicator of data fetching completion (0-100%)
-* **ETA Calculation** - Estimated time remaining based on average processing time
-* **Elapsed Time** - Current elapsed time for long-running operations
-* **Per-Video Timing** - Shows progress as: `[X/Total] Elapsed: ABCs | Est. Total: XYZs`
-
-### Detailed Processing Logs
-Each log entry includes:
-* ⏱️ **Timestamp** - HH:MM:SS format for precise timing
-* **Action Type** - Icons indicating operation (🔍 search, 🎥 fetch, 💬 comments, 💾 save, 📈 compute, etc.)
-* **Status Messages** - Descriptive text about what's happening
-* **Checkmarks** - Visual confirmation of completed steps (✓)
-* **Final Summary** - Total execution time in seconds and minutes (✅ COMPLETE! Total time: XXs (XmYYs))
-
-### Performance Optimization
-* **Dynamic Time Estimation** - Calculates average time per video and predicts remaining duration
-* **Batch Processing** - Efficient sequential video processing
-* **Connection Pooling** - Database connection optimization
-* **API Rate Limiting** - Respects YouTube API quota
-
----
-
-## 🗂️ Accessing the Database
-
-### PostgreSQL (Production)
-```bash
-# Connect via psql
-psql -h localhost -U postgres -d social_analytics
-
-# Useful queries
-\dt                    # List all tables
-SELECT * FROM channels;
-SELECT * FROM video_analytics;
-```
-
-### SQLite (Local Development)
-```bash
-# Connect via sqlite3
-sqlite3 social_analytics.db
-
-# Useful queries
-.tables                # List all tables
-SELECT * FROM video_analytics LIMIT 10;
-```
-
-### Python Direct Query
-```python
-import sqlite3
-# or: import psycopg2
-
-conn = sqlite3.connect('social_analytics.db')
-cursor = conn.cursor()
-
-# Query video analytics
-cursor.execute("""
-    SELECT title, views, engagement_rate 
-    FROM videos
-    JOIN video_analytics ON videos.video_id = video_analytics.video_id
-    ORDER BY engagement_rate DESC
-""")
-
-results = cursor.fetchall()
-for row in results:
-    print(row)
-```
-
----
-
-## ⚡ Auto Setup Features
-
-✔ Database auto-creation
-✔ Tables auto-created
-✔ No manual SQL required
-✔ JSON backup generated
-
----
-
-## ▶️ How to Run
+Start the Streamlit dashboard with:
 
 ```bash
-pip install -r requirements.txt
-python social_analytics.py
+streamlit run visualization.py
 ```
 
-Enter:
+Then open the local Streamlit URL shown in the terminal, usually:
 
+```text
+http://localhost:8501
 ```
-Channel ID (UCxxxx...)
-```
 
----
+## How To Use
 
-## ⚠️ Important Notes & Limitations
+1. Open the `Fetch Data` tab.
+2. Enter a channel name, such as `YouTube` or `MrBeast`.
+3. Set your video and playlist limits.
+4. Click `Fetch Data`.
+5. Wait for the logs and summary metrics to finish.
+6. Open `Visualize` to inspect charts and raw tables.
+7. Open `Export Data` to download the results.
 
-### YouTube API Restrictions
-* **Quota**: Single API key has daily quota limits
-* **Public Data Only**: Cannot fetch private/deleted videos
-* **Rate Limiting**: Implement delays between large requests
-* **Channel Privacy**: Data depends on channel visibility settings
+## Supported Databases
 
-### Data Availability
-* Comments are limited to recent videos (API restriction)
-* Some channels may have disabled comments
-* Closed caption data requires additional permissions
-* Subscriber count may show as "hidden" for privacy
+The code is structured for both PostgreSQL and SQLite through `DB_TYPE`.
 
-### Best Practices
-* Cache API responses to reduce quota usage
-* Run analytics during off-peak hours
-* Batch process multiple channels
-* Store data regularly for historical comparison
+- Use `DB_TYPE=postgresql` for a fuller local or production-style setup.
+- Use `DB_TYPE=sqlite` for a lightweight local database file.
 
----
+Note: the current codebase is primarily oriented around the PostgreSQL path, so PostgreSQL is the safer option if you want the most predictable setup.
 
-## 📁 Output & Generated Data
+## Requirements
 
-* **Database populated with:**
-  * `channels` - Channel metadata and statistics
-  * `videos` - Individual video data
-  * `comments` - Comment text and engagement
-  * `playlists` - Playlist information
-  * `video_analytics` - Per-video engagement & sentiment metrics
-  * `channel_analytics` - Aggregated channel insights
+Project dependencies are defined in [requirements.txt](/e:/Programming/syskriti/Project/requirements.txt).
 
-* **Backup files created:**
-  * `backup.json` - Complete JSON export
-  * `backup.csv` - CSV export for spreadsheet analysis
-  * `backup.xlsx` - Excel workbook (if pandas-excel support enabled)
+Main packages:
 
----
+- `streamlit`
+- `plotly`
+- `pandas`
+- `numpy`
+- `psycopg2-binary`
+- `sqlalchemy`
+- `requests`
+- `python-dotenv`
+- `openpyxl`
+- `nltk`
 
-## 📊 Example Insights Generated
+## Important Notes
 
-### Video Performance Insights
-* "Videos posted at 7 PM perform best" (from `best_posting_time` analysis)
-* "Tutorial videos get 45% higher engagement than vlogs"
-* "Video titles with 5-7 words have optimal performance"
-* "Audience sentiment is 68% positive on average"
+- Only public YouTube data is available through this workflow.
+- API quota limits apply to the YouTube Data API.
+- Comment fetching depends on comment availability and channel settings.
+- The channel search step uses the first matching YouTube search result.
+- Larger fetch sizes will take longer and consume more API quota.
 
-### Channel Health Metrics
-* "Channel growth rate: +2.3% this month"
-* "Audience quality score: 78/100"
-* "Average engagement rate: 3.2%"
-* "Optimal posting frequency: 3-4 videos per week"
+## Practical Limitations
 
-### Comparative Analytics
-* "Top video 'XYZ' has 5x average engagement"
-* "Comments on recent videos show positive sentiment shift"
-* "Subscriber growth correlates with tutorial uploads"
+- Private analytics such as watch time, retention, and audience demographics are not available here.
+- Keyword extraction currently uses a simple word-frequency approach.
+- Growth calculations are based on fetched video data, not on full historical channel snapshots.
+- Sentiment analysis is rule-based and may miss sarcasm, slang, or multilingual nuance.
 
----
+## Future Improvements
 
-## 🧠 ML Strategy
+- stronger keyword cleaning and stop-word filtering
+- comparative multi-channel benchmarking
+- historical trend snapshots over time
+- better growth modeling
+- richer export formats
+- more robust SQLite compatibility
 
-### Current Implementation:
+## Why This Project Matters
 
-* ✅ Rule-based analytics (engagement calculations)
-* ✅ VADER sentiment analysis on comments
-* ✅ Aggregations & time-series analysis
-* ✅ Performance categorization (Viral/Trending/Standard)
-* ✅ Audience quality scoring
+This project combines API integration, data storage, sentiment analysis, analytics, and dashboarding in one compact workflow. It is a practical portfolio piece for:
 
-### Optional Enhancements:
+- data engineering
+- analytics engineering
+- dashboard development
+- social media intelligence
+- hackathon demos
 
-* Clustering (K-Means) - Group similar video types
-* Regression (Prediction) - Predict video performance
-* Topic Modeling (LDA) - Automatic content categorization
-* Time Series Forecasting - Predict future trends
-* Comment Toxicity Detection - Identify negative patterns
+## File Reference
 
----
-
-## 🚀 Development Roadmap
-
-### ✅ Day 1: Data Fetching + Storage
-
-* YouTube API integration
-* Multi-database support (PostgreSQL/SQLite)
-* Auto schema generation
-* Data persistence
-
-### ✅ Day 2: Analytics Engine
-
-* Sentiment Analysis (VADER)
-* Engagement calculations
-* Performance categorization
-* Time-based analysis
-* Analytics table population
-
-### 📋 Day 3: Dashboard & Insights
-
-* Streamlit dashboard
-* Real-time query interface
-* Interactive visualizations
-* Export capabilities
-* Insight presentation
-
----
-
-## 🧠 Key Learning
-
-This project demonstrates:
-
-* Data Engineering
-* API Integration
-* Database Design
-* Analytics Thinking
-* AI/ML Readiness
-
----
-
-## 💡 Final Thought
-
-> This is not just a dashboard
-> This is a **Decision-Making Intelligence System**
-
----
+Main app entry point: [visualization.py](/e:/Programming/syskriti/Project/visualization.py)
