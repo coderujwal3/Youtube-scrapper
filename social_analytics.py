@@ -7,6 +7,10 @@ from dotenv import load_dotenv      # for loading environment variables from .en
 from psycopg2 import sql        # for safely constructing SQL queries (especially for database creation)
 import pandas as pd     # for creating excel backup file
 
+# importing packages for NLP
+from nltk.sentiment import SentimentIntensityAnalyzer
+from collections import Counter
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -119,6 +123,37 @@ def create_tables(conn):
         text TEXT,
         like_count INT,
         created_at TIMESTAMP
+    );
+    """
+    )
+
+    cursor.execute(
+        """
+    CREATE TABLE IF NOT EXISTS video_analytics (
+        id SERIAL PRIMARY KEY,
+        video_id VARCHAR(255),
+        engagement_rate FLOAT,
+        engagement_score INT,
+        is_top_video BOOLEAN,
+        best_posting_time VARCHAR(50),
+        sentiment_avg FLOAT,
+        performance_category VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """
+    )
+
+    cursor.execute(
+        """
+    CREATE TABLE IF NOT EXISTS channel_analytics (
+        id SERIAL PRIMARY KEY,
+        channel_id VARCHAR(255),
+        avg_views BIGINT,
+        avg_engagement FLOAT,
+        growth_rate FLOAT,
+        best_posting_time VARCHAR(50),
+        audience_quality_score FLOAT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """
     )
@@ -257,6 +292,125 @@ def fetch_comments(video_id, limit=100):
         )
 
     return comments
+
+
+# ------------------ COMPUTING ANALYTICS (engagement rate, top videos, best time) ------------------
+def compute_analytics(videos):
+    # Convert list of dicts to DataFrame if needed
+    if isinstance(videos, list):
+        videos = pd.DataFrame(videos)
+    
+    # Engagement Rate
+    videos["engagement_rate"] = (videos["likes"] + videos["comments"]) / videos["views"]
+
+    # Handle division by zero
+    videos["engagement_rate"] = videos["engagement_rate"].fillna(0)
+
+    # Top videos
+    top_videos = videos.sort_values(by="engagement_rate", ascending=False).head(5)
+
+    # Best Posting Time
+    videos["published_at"] = pd.to_datetime(videos["published_at"])
+    videos["hour"] = videos["published_at"].dt.hour
+    videos["day"] = videos["published_at"].dt.day_name()
+
+    best_time = (
+        videos.groupby(["day", "hour"])["engagement_rate"]
+        .mean()
+        .sort_values(ascending=False)
+        .head(5)
+    )
+
+    return videos, top_videos, best_time
+
+
+
+# ------------------ NLP ENGINE ------------------
+def sentiment_analysis(comments):
+    sia = SentimentIntensityAnalyzer()
+
+    if isinstance(comments, list):
+        comments = pd.DataFrame(comments)
+
+    comments["sentiment_score"] = comments["text"].apply(
+        lambda x: sia.polarity_scores(str(x))["compound"]
+    )
+
+    # Label sentiment
+    comments["sentiment"] = comments["sentiment_score"].apply(
+        lambda x: "Positive" if x > 0.05 else ("Negative" if x < -0.05 else "Neutral")
+    )
+
+    return comments
+
+
+
+# ------------------ KEYWORD EXTRACTION ------------------
+def extract_keywords(comments):
+    if isinstance(comments, list):
+        comments = pd.DataFrame(comments)
+
+    all_text = " ".join(comments["text"].astype(str))
+    words = all_text.lower().split()
+
+    common_words = Counter(words).most_common(10)
+
+    return common_words
+
+
+
+# ------------------ SAVE VIDEO ANALYTICS ------------------
+def save_video_analytics(conn, video_id, engagement_rate, engagement_score, is_top_video, best_posting_time, sentiment_avg, performance_category):
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+    INSERT INTO video_analytics (
+        video_id,
+        engagement_rate,
+        engagement_score,
+        is_top_video,
+        best_posting_time,
+        sentiment_avg,
+        performance_category
+    ) VALUES (%s,%s,%s,%s,%s,%s,%s);
+    """,
+        (
+            video_id,
+            engagement_rate,
+            engagement_score,
+            is_top_video,
+            best_posting_time,
+            sentiment_avg,
+            performance_category,
+        ),
+    )
+    conn.commit()
+
+
+# ------------------ SAVE CHANNEL ANALYTICS ------------------
+def save_channel_analytics(conn, channel_id, avg_views, avg_engagement, growth_rate, best_posting_time, audience_quality_score):
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+    INSERT INTO channel_analytics (
+        channel_id,
+        avg_views,
+        avg_engagement,
+        growth_rate,
+        best_posting_time,
+        audience_quality_score
+    ) VALUES (%s,%s,%s,%s,%s,%s);
+    """,
+        (
+            channel_id,
+            avg_views,
+            avg_engagement,
+            growth_rate,
+            best_posting_time,
+            audience_quality_score,
+        ),
+    )
+    conn.commit()
 
 
 # ------------------ SAVE FUNCTIONS ------------------
@@ -429,7 +583,93 @@ def main():
     print("Saving Excel backup...")
     save_excel_backup(channel, videos, playlists, all_comments)
 
-    print("DONE - Data Pipeline Ready!")
+    print("DONE - Data Pipeline Ready!", end="\n\n")
+
+    print("================================== Computing Analytics... ==================================")
+    videos, top_videos, best_time = compute_analytics(videos)
+
+    print("\n[+] Top Videos:")
+    print(top_videos[["title", "engagement_rate"]])
+
+    print("\n[+] Best Posting Time:\n")
+    print(best_time)
+
+    print("\n================================== Running NLP... ==================================")
+    comments_df = sentiment_analysis(comments)
+
+    sentiment_counts = comments_df["sentiment"].value_counts()
+
+    print("\n[+] Sentiment Distribution:")
+    print(sentiment_counts)
+
+    print("\n[+] Top Keywords:")
+    print(extract_keywords(comments_df))
+
+    # Save Analytics to Database
+    print("\n================================== Saving Analytics to DB... ==================================")
+    
+    # Get sentiment average for all videos (convert to Python float to avoid numpy serialization issues)
+    sentiment_avg = float(comments_df["sentiment_score"].mean())
+    
+    # Save VIDEO ANALYTICS for each video
+    top_videos_list = top_videos["video_id"].tolist()
+    for idx, video in videos.iterrows():
+        is_top = video["video_id"] in top_videos_list
+        engagement_score = int(video["engagement_rate"] * 100)
+        
+        # Determine performance category
+        if video["engagement_rate"] > 0.1:
+            performance_category = "Excellent"
+        elif video["engagement_rate"] > 0.05:
+            performance_category = "Good"
+        elif video["engagement_rate"] > 0.01:
+            performance_category = "Average"
+        else:
+            performance_category = "Poor"
+        
+        best_posting_time = f"{video['day']} at {video['hour']}:00"
+        
+        save_video_analytics(
+            conn,
+            video["video_id"],
+            video["engagement_rate"],
+            engagement_score,
+            is_top,
+            best_posting_time,
+            sentiment_avg,
+            performance_category
+        )
+    
+    # Save CHANNEL ANALYTICS
+    avg_views = int(videos["views"].mean())
+    avg_engagement = float(videos["engagement_rate"].mean())
+    
+    # Calculate growth rate (views trend)
+    if len(videos) > 1:
+        growth_rate = float((videos["views"].iloc[-1] - videos["views"].iloc[0]) / videos["views"].iloc[0] * 100)
+    else:
+        growth_rate = 0.0
+    
+    # Best posting time for channel
+    best_posting_day_hour = best_time.idxmax()
+    best_posting_time_str = f"{best_posting_day_hour[0]} at {best_posting_day_hour[1]}:00"
+    
+    # Audience quality score based on sentiment
+    positive_posts = (comments_df["sentiment"] == "Positive").sum()
+    total_comments = len(comments_df)
+    audience_quality_score = float((positive_posts / total_comments * 100) if total_comments > 0 else 0)
+    
+    save_channel_analytics(
+        conn,
+        channel_id,
+        avg_views,
+        avg_engagement,
+        growth_rate,
+        best_posting_time_str,
+        audience_quality_score
+    )
+    
+    print("[OK] Analytics saved to database!")
 
 
 if __name__ == "__main__":
