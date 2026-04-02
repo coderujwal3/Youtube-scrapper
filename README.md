@@ -136,6 +136,101 @@ The app works with six main tables:
 | `video_analytics` | Computed metrics for individual videos |
 | `channel_analytics` | Aggregated metrics for the channel |
 
+### Detailed Table Schemas
+
+The following schemas match the current `create_tables()`
+
+#### `channels`
+
+| Column | Type | Constraints / Default | Description |
+|---|---|---|---|
+| `channel_id` | `VARCHAR(255)` | `PRIMARY KEY` | YouTube channel ID |
+| `title` | `TEXT` |  | Channel title |
+| `subscribers` | `BIGINT` |  | Subscriber count |
+| `total_views` | `BIGINT` |  | Total channel views |
+| `video_count` | `INT` |  | Total published videos reported by YouTube |
+| `created_at` | `TIMESTAMP` | `DEFAULT CURRENT_TIMESTAMP` | Time the row was stored locally |
+
+```sql
+CREATE TABLE IF NOT EXISTS channels (
+    channel_id VARCHAR(255) PRIMARY KEY,
+    title TEXT,
+    subscribers BIGINT,
+    total_views BIGINT,
+    video_count INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### `videos`
+
+| Column | Type | Constraints / Default | Description |
+|---|---|---|---|
+| `video_id` | `VARCHAR(255)` | `PRIMARY KEY` | YouTube video ID |
+| `channel_id` | `VARCHAR(255)` |  | Parent channel ID |
+| `title` | `TEXT` |  | Video title |
+| `views` | `BIGINT` |  | View count |
+| `likes` | `BIGINT` |  | Like count |
+| `comments` | `BIGINT` |  | Total top-level comment count reported by YouTube |
+| `published_at` | `TIMESTAMP` |  | Original YouTube publish timestamp |
+| `created_at` | `TIMESTAMP` | `DEFAULT CURRENT_TIMESTAMP` | Time the row was stored locally |
+
+```sql
+CREATE TABLE IF NOT EXISTS videos (
+    video_id VARCHAR(255) PRIMARY KEY,
+    channel_id VARCHAR(255),
+    title TEXT,
+    views BIGINT,
+    likes BIGINT,
+    comments BIGINT,
+    published_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### `playlists`
+
+| Column | Type | Constraints / Default | Description |
+|---|---|---|---|
+| `playlist_id` | `VARCHAR(255)` | `PRIMARY KEY` | YouTube playlist ID |
+| `channel_id` | `VARCHAR(255)` |  | Parent channel ID |
+| `title` | `TEXT` |  | Playlist title |
+| `description` | `TEXT` |  | Playlist description |
+| `item_count` | `INT` |  | Number of videos in the playlist |
+| `published_at` | `TIMESTAMP` |  | Playlist publish timestamp |
+| `created_at` | `TIMESTAMP` | `DEFAULT CURRENT_TIMESTAMP` | Time the row was stored locally |
+
+```sql
+CREATE TABLE IF NOT EXISTS playlists (
+    playlist_id VARCHAR(255) PRIMARY KEY,
+    channel_id VARCHAR(255),
+    title TEXT,
+    description TEXT,
+    item_count INT,
+    published_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### `comments`
+
+| Column | Type | Constraints / Default | Description |
+|---|---|---|---|
+| `comment_id` | `VARCHAR(255)` | `PRIMARY KEY` | Top-level YouTube comment thread ID |
+| `video_id` | `VARCHAR(255)` |  | Parent video ID |
+| `text` | `TEXT` |  | Rendered comment text |
+| `like_count` | `INT` |  | Comment likes |
+| `created_at` | `TIMESTAMP` |  | Original comment publish timestamp |
+
+```sql
+CREATE TABLE IF NOT EXISTS comments (
+    comment_id VARCHAR(255) PRIMARY KEY,
+    video_id VARCHAR(255),
+    text TEXT,
+    like_count INT,
+    created_at TIMESTAMP
+);
+
 ### Relationship Summary
 
 ```text
@@ -281,4 +376,4 @@ This project combines API integration, data storage, sentiment analysis, analyti
 
 ## File Reference
 
-Main app entry point: [visualization.py](/e:/Programming/syskriti/Project/visualization.py)
+Main app entry point: visualization.py
