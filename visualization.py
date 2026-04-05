@@ -26,10 +26,10 @@ DB_TYPE = (st.secrets["DB_TYPE"] or "sqlite").strip().lower()
 IS_SQLITE = DB_TYPE in {"sqlite", "sqlite3"}
 
 if IS_SQLITE:
-    DB_CONFIG = {"dbname": st.secrets["SQLITE_DB_NAME", "social_analytics.db"]}
+    DB_CONFIG = {"dbname": st.secrets["SQLITE_DB_NAME"]}
 else:
     DB_CONFIG = {
-        "dbname": st.secrets["DB_NAME", "social_analytics"],
+        "dbname": st.secrets["DB_NAME"],
         "user": st.secrets["DB_USER"],
         "password": st.secrets["DB_PASSWORD"],
         "host": st.secrets["DB_HOST"],
@@ -134,7 +134,7 @@ def create_database_if_not_exists():
     validate_postgres_config(DB_CONFIG)
     db_name = DB_CONFIG["dbname"]
     maintenance_config = DB_CONFIG.copy()
-    maintenance_config["dbname"] = st.secrets["POSTGRES_MAINTENANCE_DB", "postgres"]
+    maintenance_config["dbname"] = st.secrets["POSTGRES_MAINTENANCE_DB"]
 
     conn = psycopg2.connect(**maintenance_config)
     conn.autocommit = True
