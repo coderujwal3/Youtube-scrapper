@@ -17,6 +17,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 
 load_dotenv()
+nltk.download("vader_lexicon")
 
 st.set_page_config(page_title="YouTube Analytics Dashboard", layout="wide")
 
