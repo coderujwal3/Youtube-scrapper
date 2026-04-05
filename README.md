@@ -2,6 +2,8 @@
 
 A Streamlit dashboard for collecting public YouTube channel data, storing it in a database, computing engagement and sentiment metrics, and exploring the results through interactive charts and exports.
 
+> View the site - [scrape-social](https://scrapesocial.streamlit.app/)
+
 ## Overview
 
 This project helps creators, analysts, and hackathon teams answer questions like:
