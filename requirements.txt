@@ -1,21 +1,21 @@
 # Core Dependencies
-streamlit>=1.28.0          # Dashboard framework
-plotly>=5.14.0             # Interactive visualizations
+streamlit          # Dashboard framework
+plotly             # Interactive visualizations
 
 # Data Processing & Analysis
-pandas>=1.5.0              # Data manipulation and analysis
-numpy>=1.24.0              # Numerical computations
+pandas              # Data manipulation and analysis
+numpy              # Numerical computations
 
 # Database
-psycopg2-binary>=2.9.0     # PostgreSQL driver
-sqlalchemy>=2.0.0          # Database ORM and connection management
+psycopg2-binary     # PostgreSQL driver
+sqlalchemy          # Database ORM and connection management
 
 # API & Web
-requests>=2.28.0           # HTTP library for YouTube API
-python-dotenv>=0.21.0      # Environment variable management
+requests           # HTTP library for YouTube API
+python-dotenv      # Environment variable management
 
 # Data Export
-openpyxl>=3.8.0            # Excel file writing
+openpyxl            # Excel file writing
 
 # NLP & Sentiment Analysis
-nltk>=3.8.0                # Natural Language Toolkit for sentiment analysis
+nltk              # Natural Language Toolkit for sentiment analysis
