@@ -279,7 +279,10 @@ YOUTUBE_API_KEY=your_youtube_api_key
 # Database mode
 DB_TYPE=postgresql
 
-# PostgreSQL settings
+# Preferred for Neon or any hosted Postgres
+CONNECTION_STRING=postgresql://<user>:<password>@<host>/<dbname>?sslmode=require
+
+# Optional fallback Postgres settings (used only when CONNECTION_STRING is missing)
 DB_NAME=social_analytics
 DB_USER=postgres
 DB_PASSWORD=your_password
@@ -289,6 +292,16 @@ DB_PORT=5432
 # SQLite settings
 SQLITE_DB_NAME=social_analytics.db
 ```
+
+### 5. Neon Quick Start
+
+For Neon, use your project connection string and keep `DB_TYPE=postgresql`.
+
+For your workspace:
+- Neon org: `org-patient-wave-34179892`
+- Neon project: `wild-field-87357974`
+
+The app now supports direct URL-based Postgres connections, which is the recommended Neon setup.
 
 ## Running The App
 
@@ -318,7 +331,7 @@ http://localhost:8501
 
 The code is structured for both PostgreSQL and SQLite through `DB_TYPE`.
 
-- Use `DB_TYPE=postgresql` for a fuller local or production-style setup.
+- Use `DB_TYPE=postgresql` for local PostgreSQL or hosted PostgreSQL (including Neon).
 - Use `DB_TYPE=sqlite` for a lightweight local database file.
 
 Note: the current codebase is primarily oriented around the PostgreSQL path, so PostgreSQL is the safer option if you want the most predictable setup.

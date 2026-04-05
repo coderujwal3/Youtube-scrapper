@@ -21,19 +21,19 @@ load_dotenv()
 st.set_page_config(page_title="YouTube Analytics Dashboard", layout="wide")
 
 # ================= CONFIGURATION =================
-API_KEY = os.getenv("YOUTUBE_API_KEY")
-DB_TYPE = (os.getenv("DB_TYPE") or "sqlite").strip().lower()
+API_KEY = st.secrets("YOUTUBE_API_KEY")
+DB_TYPE = (st.secrets("DB_TYPE") or "sqlite").strip().lower()
 IS_SQLITE = DB_TYPE in {"sqlite", "sqlite3"}
 
 if IS_SQLITE:
-    DB_CONFIG = {"dbname": os.getenv("SQLITE_DB_NAME", "social_analytics.db")}
+    DB_CONFIG = {"dbname": st.secrets("SQLITE_DB_NAME", "social_analytics.db")}
 else:
     DB_CONFIG = {
-        "dbname": os.getenv("DB_NAME", "social_analytics"),
-        "user": os.getenv("DB_USER"),
-        "password": os.getenv("DB_PASSWORD"),
-        "host": os.getenv("DB_HOST"),
-        "port": os.getenv("DB_PORT"),
+        "dbname": st.secrets("DB_NAME", "social_analytics"),
+        "user": st.secrets("DB_USER"),
+        "password": st.secrets("DB_PASSWORD"),
+        "host": st.secrets("DB_HOST"),
+        "port": st.secrets("DB_PORT"),
     }
 
 TABLE_NAMES = ["channels", "videos", "comments", "playlists", "video_analytics", "channel_analytics"]
@@ -134,7 +134,7 @@ def create_database_if_not_exists():
     validate_postgres_config(DB_CONFIG)
     db_name = DB_CONFIG["dbname"]
     maintenance_config = DB_CONFIG.copy()
-    maintenance_config["dbname"] = os.getenv("POSTGRES_MAINTENANCE_DB", "postgres")
+    maintenance_config["dbname"] = st.secrets("POSTGRES_MAINTENANCE_DB", "postgres")
 
     conn = psycopg2.connect(**maintenance_config)
     conn.autocommit = True
