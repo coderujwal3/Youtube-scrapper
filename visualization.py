@@ -366,7 +366,7 @@ def fetch_playlists(channel_id, limit, progress_container):
 
     return playlists
 
-def fetch_comments(video_id, limit=100):
+def fetch_comments(video_id, limit=40):
     url = f"https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId={video_id}&maxResults={limit}&key={API_KEY}"
     try:
         res = fetch_json(url)
