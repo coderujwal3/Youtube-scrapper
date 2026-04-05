@@ -158,7 +158,14 @@ def get_db_connection():
         ensure_sqlite_database_path()
         return sqlite3.connect(DB_CONFIG["dbname"])
     validate_postgres_config(DB_CONFIG)
-    return psycopg2.connect(**DB_CONFIG)
+    return psycopg2.connect(
+        dbname=DB_CONFIG["dbname"],
+        user=DB_CONFIG["user"],
+        password=DB_CONFIG["password"],
+        host=DB_CONFIG["host"],
+        port=DB_CONFIG["port"],
+        sslmode="require"
+    )
 
 def create_tables(conn):
     cursor = conn.cursor()
